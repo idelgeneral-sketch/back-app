@@ -58,9 +58,11 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
             setCurrentRep(prevRep => {
               const nextRep = prevRep + 1;
               
-              // Announce rep count with voice
+              // Announce rep count with voice - delay it slightly to feel more natural
               if (voiceEnabled) {
-                workoutSpeech.announceRepNumber(nextRep);
+                setTimeout(() => {
+                  workoutSpeech.announceRepNumber(nextRep);
+                }, 300); // 300ms delay to make it feel more natural
               }
               
               // Check if set is complete
@@ -98,12 +100,14 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
     if (isResting && restTimer > 0) {
       interval = setInterval(() => {
         setRestTimer(prev => {
-          // Voice countdown for last 3 seconds
-          if (voiceEnabled && prev <= 3 && prev > 0) {
-            workoutSpeech.announceRestCountdown(prev);
+          const nextValue = prev - 1;
+          
+          // Voice countdown for last 3 seconds - announce AFTER decrementing
+          if (voiceEnabled && nextValue <= 3 && nextValue > 0) {
+            workoutSpeech.announceRestCountdown(nextValue);
           }
           
-          if (prev <= 1) {
+          if (nextValue <= 0) {
             setIsResting(false);
             setRepTimer(0);
             // Automatically continue to next set
@@ -122,7 +126,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
             }
             return 0;
           }
-          return prev - 1;
+          return nextValue;
         });
       }, 1000);
     }
