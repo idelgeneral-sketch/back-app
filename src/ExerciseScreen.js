@@ -161,15 +161,8 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
 
   // Removed milestone announcements
 
-  // Voice announcement for set completion
-  useEffect(() => {
-    if (voiceEnabled && isResting && restTimer === exercise.restTime) {
-      workoutSpeech.announceSetComplete(currentSet - 1, exercise.sets);
-      if (exercise.restTime > 0) {
-        workoutSpeech.announceRest(exercise.restTime);
-      }
-    }
-  }, [isResting, restTimer, exercise.restTime, currentSet, exercise.sets, voiceEnabled]);
+  // Voice announcement for set completion - removed duplicate rest announcement
+  // The "Rest" announcement is now handled in the rep completion logic
 
   // Voice announcement for exercise completion
   useEffect(() => {
