@@ -1,0 +1,63 @@
+[
+  {
+    "id": 1,
+    "name": "Push-ups",
+    "description": "Classic upper body exercise targeting chest, shoulders, and triceps",
+    "sets": 3,
+    "reps": 15,
+    "restTime": 15,
+    "repDuration": 2,
+    "instructions": "Keep your body straight, lower until chest nearly touches ground, push back up"
+  },
+  {
+    "id": 2,
+    "name": "Squats",
+    "description": "Lower body compound exercise for legs and glutes",
+    "sets": 3,
+    "reps": 20,
+    "restTime": 15,
+    "repDuration": 1.5,
+    "instructions": "Stand with feet shoulder-width apart, lower until thighs are parallel to ground, return to standing"
+  },
+  {
+    "id": 3,
+    "name": "Plank",
+    "description": "Core strengthening isometric exercise",
+    "sets": 3,
+    "reps": 1,
+    "duration": 45,
+    "restTime": 15,
+    "repDuration": 45,
+    "instructions": "Hold a straight line from head to heels, engage core muscles"
+  },
+  {
+    "id": 4,
+    "name": "Lunges",
+    "description": "Single-leg exercise for balance and leg strength",
+    "sets": 3,
+    "reps": 12,
+    "restTime": 15,
+    "repDuration": 2.5,
+    "instructions": "Step forward, lower back knee toward ground, return to start, alternate legs"
+  },
+  {
+    "id": 5,
+    "name": "Mountain Climbers",
+    "description": "Cardio and core exercise in plank position",
+    "sets": 3,
+    "reps": 20,
+    "restTime": 15,
+    "repDuration": 1,
+    "instructions": "Start in plank, alternately bring knees to chest in running motion"
+  },
+  {
+    "id": 6,
+    "name": "Burpees",
+    "description": "Full-body explosive exercise combining squat, plank, and jump",
+    "sets": 3,
+    "reps": 10,
+    "restTime": 15,
+    "repDuration": 3,
+    "instructions": "Squat down, jump back to plank, do push-up, jump feet to hands, jump up with arms overhead"
+  }
+]
