@@ -71,10 +71,23 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
                 if (currentSet < exercise.sets) {
                   setCurrentSet(prevSet => prevSet + 1);
                   setCurrentRep(0);
-                  setIsResting(true);
-                  setRestTimer(exercise.restTime);
                   setIsRunning(false);
                   setIsPaused(false);
+                  
+                  // Announce "Rest" first, then start rest timer
+                  if (voiceEnabled && exercise.restTime > 0) {
+                    setIsWaitingForVoice(true);
+                    workoutSpeech.speak("Rest", {
+                      onEnd: () => {
+                        setIsWaitingForVoice(false);
+                        setIsResting(true);
+                        setRestTimer(exercise.restTime);
+                      }
+                    });
+                  } else {
+                    setIsResting(true);
+                    setRestTimer(exercise.restTime);
+                  }
                 } else {
                   // Exercise complete
                   setIsRunning(false);
@@ -223,7 +236,6 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
       {/* Exercise Info */}
       <div className="exercise-info">
         <h2 className="exercise-name">{exercise.name}</h2>
-        <p className="exercise-description">{exercise.description}</p>
         <div className="exercise-instructions">
           <strong>Instructions:</strong> {exercise.instructions}
         </div>

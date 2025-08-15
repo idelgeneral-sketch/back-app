@@ -83,7 +83,7 @@ class WorkoutSpeech {
   }
 
   announceWorkoutStart(onComplete) {
-    this.speak("Workout starting! Let's get moving!", { onEnd: onComplete });
+    this.speak("Workout starting!", { onEnd: onComplete });
   }
 
   announceRepNumber(repNumber) {
