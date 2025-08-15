@@ -74,16 +74,18 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
                   setIsRunning(false);
                   setIsPaused(false);
                   
-                  // Announce "Rest" first, then start rest timer
+                  // Announce "Rest" after a delay to avoid overlap with rep count
                   if (voiceEnabled && exercise.restTime > 0) {
                     setIsWaitingForVoice(true);
-                    workoutSpeech.speak("Rest", {
-                      onEnd: () => {
-                        setIsWaitingForVoice(false);
-                        setIsResting(true);
-                        setRestTimer(exercise.restTime);
-                      }
-                    });
+                    setTimeout(() => {
+                      workoutSpeech.speak("Rest", {
+                        onEnd: () => {
+                          setIsWaitingForVoice(false);
+                          setIsResting(true);
+                          setRestTimer(exercise.restTime);
+                        }
+                      });
+                    }, 800); // 800ms delay to avoid overlap with rep announcement
                   } else {
                     setIsResting(true);
                     setRestTimer(exercise.restTime);
@@ -123,20 +125,9 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
           if (nextValue <= 0) {
             setIsResting(false);
             setRepTimer(0);
-            // Automatically continue to next set
-            if (voiceEnabled) {
-              setIsWaitingForVoice(true);
-              workoutSpeech.announceSetStart(currentSet, exercise.sets);
-              // Wait a moment for the announcement, then start automatically
-              setTimeout(() => {
-                setIsWaitingForVoice(false);
-                setIsRunning(true);
-                setIsPaused(false);
-              }, 1500); // 1.5 second delay for voice
-            } else {
-              setIsRunning(true);
-              setIsPaused(false);
-            }
+            // Automatically continue to next set - removed set count announcement
+            setIsRunning(true);
+            setIsPaused(false);
             return 0;
           }
           return nextValue;
@@ -213,6 +204,19 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
     setVoiceEnabled(newVoiceState);
   };
 
+  const handleSkipNext = () => {
+    // Stop current exercise and move to next
+    setIsRunning(false);
+    setIsPaused(false);
+    setIsResting(false);
+    setRepTimer(0);
+    setRestTimer(0);
+    if (voiceEnabled) {
+      workoutSpeech.stop();
+    }
+    handleExerciseComplete();
+  };
+
   return (
     <div className="exercise-screen">
       {/* Top Navigation */}
@@ -287,6 +291,13 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
               disabled={(!isRunning && !isPaused) || isWaitingForVoice}
             >
               ⏹️ Stop
+            </button>
+            <button 
+              className="skip-next-button"
+              onClick={handleSkipNext}
+              title="Skip to next exercise"
+            >
+              ⏭️ Skip Next
             </button>
           </>
         )}
