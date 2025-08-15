@@ -58,15 +58,9 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
             setCurrentRep(prevRep => {
               const nextRep = prevRep + 1;
               
-              // Announce rep count with voice - delay it slightly to feel more natural
-              if (voiceEnabled) {
-                setTimeout(() => {
-                  workoutSpeech.announceRepNumber(nextRep);
-                }, 300); // 300ms delay to make it feel more natural
-              }
-              
-              // Check if set is complete
+              // Check if set is complete FIRST to avoid unnecessary rep announcements
               if (nextRep >= exercise.reps) {
+                // Don't announce the final rep to avoid overlap with "Rest"
                 // Set complete - start rest or move to next set
                 if (currentSet < exercise.sets) {
                   setCurrentSet(prevSet => prevSet + 1);
@@ -74,18 +68,16 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
                   setIsRunning(false);
                   setIsPaused(false);
                   
-                  // Announce "Rest" after a delay to avoid overlap with rep count
+                  // Announce "Rest" immediately since we're not announcing the final rep
                   if (voiceEnabled && exercise.restTime > 0) {
                     setIsWaitingForVoice(true);
-                    setTimeout(() => {
-                      workoutSpeech.speak("Rest", {
-                        onEnd: () => {
-                          setIsWaitingForVoice(false);
-                          setIsResting(true);
-                          setRestTimer(exercise.restTime);
-                        }
-                      });
-                    }, 800); // 800ms delay to avoid overlap with rep announcement
+                    workoutSpeech.speak("Rest", {
+                      onEnd: () => {
+                        setIsWaitingForVoice(false);
+                        setIsResting(true);
+                        setRestTimer(exercise.restTime);
+                      }
+                    });
                   } else {
                     setIsResting(true);
                     setRestTimer(exercise.restTime);
@@ -95,6 +87,13 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
                   setIsRunning(false);
                   setIsPaused(false);
                   handleExerciseComplete();
+                }
+              } else {
+                // Announce rep count with voice - only for non-final reps
+                if (voiceEnabled) {
+                  setTimeout(() => {
+                    workoutSpeech.announceRepNumber(nextRep);
+                  }, 300); // 300ms delay to make it feel more natural
                 }
               }
               return nextRep;
@@ -211,6 +210,9 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
     setIsResting(false);
     setRepTimer(0);
     setRestTimer(0);
+    // Reset counters for next exercise
+    setCurrentSet(1);
+    setCurrentRep(0);
     if (voiceEnabled) {
       workoutSpeech.stop();
     }
