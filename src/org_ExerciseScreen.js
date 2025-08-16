@@ -53,20 +53,17 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
         setRepTimer(prev => {
           const newRepTimer = prev + 0.1; // Update every 100ms for smooth progress
           
-          // Check if we should announce the UPCOMING rep (slightly before completion)
-          // Announce when we're 200ms before the rep completes
-          const timeUntilRepComplete = repDuration - newRepTimer;
-          if (timeUntilRepComplete <= 0.2 && timeUntilRepComplete > 0.1 && currentRep < exercise.reps) {
-            const upcomingRep = currentRep + 1;
-            if (voiceEnabled) {
-              workoutSpeech.announceRepNumber(upcomingRep);
-            }
-          }
-          
           // Check if we should advance to next rep
           if (newRepTimer >= repDuration && currentRep < exercise.reps) {
             setCurrentRep(prevRep => {
               const nextRep = prevRep + 1;
+              
+              // Announce rep count with voice - delay it slightly to feel more natural
+              if (voiceEnabled) {
+                setTimeout(() => {
+                  workoutSpeech.announceRepNumber(nextRep);
+                }, 300); // 300ms delay to make it feel more natural
+              }
               
               // Check if set is complete
               if (nextRep >= exercise.reps) {
@@ -77,7 +74,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
                   setIsRunning(false);
                   setIsPaused(false);
                   
-                  // Announce "Rest" after a short delay to let rep announcement finish
+                  // Announce "Rest" after a short delay to let rep 15 finish
                   if (voiceEnabled && exercise.restTime > 0) {
                     setIsWaitingForVoice(true);
                     setTimeout(() => {
@@ -88,7 +85,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
                           setRestTimer(exercise.restTime);
                         }
                       });
-                    }, 500); // 500ms delay after rep completion
+                    }, 700); // 700ms delay after rep announcement
                   } else {
                     setIsResting(true);
                     setRestTimer(exercise.restTime);
@@ -152,6 +149,11 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
       }
     }
   }, [exercise.name, hasAnnouncedExercise, voiceEnabled]);
+
+  // Removed milestone announcements
+
+  // Voice announcement for set completion - removed duplicate rest announcement
+  // The "Rest" announcement is now handled in the rep completion logic
 
   // Voice announcement for exercise completion
   useEffect(() => {

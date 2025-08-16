@@ -195,17 +195,29 @@
 /* Counters */
 .counters-container {
   display: flex;
-  justify-content: space-around;
-  gap: 20px;
+  justify-content: center;
+  gap: 10px;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 .counter {
   flex: 1;
-  background: rgba(102, 126, 234, 0.1);
+  max-width: 180px;
   border-radius: 15px;
   padding: 20px;
   text-align: center;
-  border: 2px solid rgba(102, 126, 234, 0.2);
+  border: 2px solid;
+}
+
+.counter-reps {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+.counter-sets {
+  background: rgba(149, 165, 166, 0.05);
+  border-color: rgba(149, 165, 166, 0.15);
 }
 
 .counter-label {
