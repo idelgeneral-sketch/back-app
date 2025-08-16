@@ -3,6 +3,7 @@ import './ExerciseScreen.css';
 import workoutSpeech from './speechUtils';
 
 const GLOBAL_REP_DURATION = 2; // Default 2 seconds per rep
+const SET_PREPARATION_DELAY = 1; // 1 second delay before starting new set
 
 const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercise, onFinishWorkout, onBackHome }) => {
   const [currentSet, setCurrentSet] = useState(1);
@@ -16,6 +17,8 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [hasAnnouncedExercise, setHasAnnouncedExercise] = useState(false);
   const [isWaitingForVoice, setIsWaitingForVoice] = useState(false);
+  const [isPreparingForSet, setIsPreparingForSet] = useState(false);
+  const [preparationTimer, setPreparationTimer] = useState(0);
 
   // Get rep duration from exercise or use global default
   const repDuration = exercise.repDuration || GLOBAL_REP_DURATION;
@@ -37,18 +40,18 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
   // General timer that runs throughout the workout
   useEffect(() => {
     let interval;
-    if (isRunning && !isPaused && !isResting) {
+    if (isRunning && !isPaused && !isResting && !isPreparingForSet) {
       interval = setInterval(() => {
         setTimer(prev => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isRunning, isPaused, isResting]);
+  }, [isRunning, isPaused, isResting, isPreparingForSet]);
 
   // Rep timer - automatically advances reps based on duration and voice counting
   useEffect(() => {
     let interval;
-    if (isRunning && !isPaused && !isResting && !isWaitingForVoice) {
+    if (isRunning && !isPaused && !isResting && !isWaitingForVoice && !isPreparingForSet) {
       interval = setInterval(() => {
         setRepTimer(prev => {
           const newRepTimer = prev + 0.1; // Update every 100ms for smooth progress
@@ -110,7 +113,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [isRunning, isPaused, isResting, isWaitingForVoice, currentRep, currentSet, exercise.reps, exercise.sets, repDuration, voiceEnabled]);
+  }, [isRunning, isPaused, isResting, isWaitingForVoice, isPreparingForSet, currentRep, currentSet, exercise.reps, exercise.sets, repDuration, voiceEnabled]);
 
   // Rest timer
   useEffect(() => {
@@ -128,9 +131,10 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
           if (nextValue <= 0) {
             setIsResting(false);
             setRepTimer(0);
-            // Automatically continue to next set - removed set count announcement
-            setIsRunning(true);
-            setIsPaused(false);
+            
+            // Start preparation phase before next set
+            setIsPreparingForSet(true);
+            setPreparationTimer(SET_PREPARATION_DELAY);
             return 0;
           }
           return nextValue;
@@ -139,6 +143,31 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
     }
     return () => clearInterval(interval);
   }, [isResting, restTimer, voiceEnabled, currentSet, exercise.sets]);
+
+  // Preparation timer - countdown before starting new set
+  useEffect(() => {
+    let interval;
+    if (isPreparingForSet && preparationTimer > 0) {
+      interval = setInterval(() => {
+        setPreparationTimer(prev => {
+          const nextValue = prev - 1;
+          
+          if (nextValue <= 0) {
+            setIsPreparingForSet(false);
+            // Start the new set
+            setIsRunning(true);
+            setIsPaused(false);
+            if (voiceEnabled) {
+              workoutSpeech.speak("Go!");
+            }
+            return 0;
+          }
+          return nextValue;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPreparingForSet, preparationTimer, voiceEnabled]);
 
   // Exercise announcement when component mounts
   useEffect(() => {
@@ -277,7 +306,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
 
       {/* Control Buttons */}
       <div className="control-buttons">
-        {!isExerciseComplete && !isResting && (
+        {!isExerciseComplete && !isResting && !isPreparingForSet && (
           <>
             <button 
               className={`start-pause-button ${isRunning ? 'pause' : 'start'} ${isWaitingForVoice ? 'waiting' : ''}`}
