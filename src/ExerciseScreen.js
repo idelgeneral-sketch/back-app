@@ -91,7 +91,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
                           setRestTimer(exercise.restTime);
                         }
                       });
-                    }, 500); // 500ms delay after rep completion
+                    }, 1500); // 1.5s delay after rep completion
                   } else {
                     setIsResting(true);
                     setRestTimer(exercise.restTime);
