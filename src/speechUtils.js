@@ -36,7 +36,8 @@ class WorkoutSpeech {
     for (const voiceName of hebrewVoiceNames) {
       this.voice = voices.find(v => 
         v.name.includes(voiceName) || 
-        v.lang.includes('he') ||
+        v.lang.includes('Asaf') ||
+//		v.lang.includes('he') ||
         v.lang.includes('iw') // Alternative Hebrew language code
       );
       if (this.voice) {
@@ -125,7 +126,7 @@ class WorkoutSpeech {
         utterance.voice = this.voice;
       }
       utterance.lang = 'he-IL'; // Hebrew (Israel)
-      utterance.rate = options.rate || 0.8; // Slightly slower for clarity
+      utterance.rate = options.rate || 0.6; // Slightly slower for clarity
       utterance.pitch = options.pitch || 1.0;
       utterance.volume = options.volume || 0.8;
 

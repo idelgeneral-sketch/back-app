@@ -19,16 +19,32 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
   const [isWaitingForVoice, setIsWaitingForVoice] = useState(false);
   const [isPreparingForSet, setIsPreparingForSet] = useState(false);
   const [preparationTimer, setPreparationTimer] = useState(0);
+  const [announcedReps, setAnnouncedReps] = useState(new Set());
+
+  // Reset states when exercise changes
+  useEffect(() => {
+    setCurrentSet(1);
+    setCurrentRep(0);
+    setRepTimer(0);
+    setIsResting(false);
+    setRestTimer(0);
+    setIsRunning(false);
+    setIsPaused(false);
+    setHasAnnouncedExercise(false);
+    setIsWaitingForVoice(false);
+    setIsPreparingForSet(false);
+    setPreparationTimer(0);
+    setAnnouncedReps(new Set());
+  }, [exerciseIndex, exercise.name]); // Reset when exerciseIndex or exercise name changes
 
   // Get rep duration from exercise or use global default
   const repDuration = exercise.repDuration || GLOBAL_REP_DURATION;
 
   // Calculate derived values first
   const progressPercentage = ((exerciseIndex + (currentSet - 1) / exercise.sets) / totalExercises) * 100;
-  //const repProgress = (repTimer / repDuration) * 100;
   const isExerciseComplete = currentSet === exercise.sets && currentRep === exercise.reps;
 
-  // Helper function definition
+  // handling what happens when excercise is complete
   const handleExerciseComplete = () => {
     if (exerciseIndex < totalExercises - 1) {
       onNextExercise();
@@ -56,56 +72,105 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
         setRepTimer(prev => {
           const newRepTimer = prev + 0.1; // Update every 100ms for smooth progress
           
-          // Check if we should announce the UPCOMING rep (slightly before completion)
-          // Announce when we're 200ms before the rep completes
+          // ASYNC VOICE ANNOUNCEMENT - Non-blocking
           const timeUntilRepComplete = repDuration - newRepTimer;
-          if (timeUntilRepComplete <= 0.2 && timeUntilRepComplete > 0.1 && currentRep < exercise.reps) {
-            const upcomingRep = currentRep + 1;
-            if (voiceEnabled) {
-              workoutSpeech.announceRepNumber(upcomingRep);
+          if (timeUntilRepComplete <= 0.2 && timeUntilRepComplete > 0.1) {
+            // Calculate which rep we're currently performing (currentRep is 0-indexed for display)
+            const currentPerformingRep = currentRep + 1;
+            const repKey = `${currentSet}-${currentPerformingRep}`;
+            
+            // Only announce if we haven't announced this rep yet and we're not at max reps
+            if (voiceEnabled && !announcedReps.has(repKey) && currentRep < exercise.reps) {
+              setAnnouncedReps(prev => new Set([...prev, repKey]));
+              // Fire and forget - don't wait for speech to complete
+              setTimeout(() => {
+                workoutSpeech.announceRepNumber(currentPerformingRep);
+              }, 0);
             }
           }
           
-          // Check if we should advance to next rep
-          if (newRepTimer >= repDuration && currentRep < exercise.reps) {
+          // Check if we should advance to next rep - INDEPENDENT of speech
+          if (newRepTimer >= repDuration) {
             setCurrentRep(prevRep => {
               const nextRep = prevRep + 1;
               
-              // Check if set is complete
+              // Check if set is complete (all reps done)
               if (nextRep >= exercise.reps) {
-                // Set complete - start rest or move to next set
-                if (currentSet < exercise.sets) {
-                  setCurrentSet(prevSet => prevSet + 1);
-                  setCurrentRep(0);
+                // Set complete - check if this was the last set of the exercise
+                if (currentSet >= exercise.sets) {
+                  // This was the last set - but we may still need to rest before moving to next exercise
                   setIsRunning(false);
                   setIsPaused(false);
                   
-                  // Announce "Rest" after a short delay to let rep announcement finish
-                  if (voiceEnabled && exercise.restTime > 0) {
-                    setIsWaitingForVoice(true);
-                    setTimeout(() => {
-                      workoutSpeech.speak("Rest", {
-                        onEnd: () => {
-                          setIsWaitingForVoice(false);
-                          setIsResting(true);
-                          setRestTimer(exercise.restTime);
-                        }
+                  // Clear announced reps
+                  setAnnouncedReps(new Set());
+                  
+                  // Check if we need rest time after completing the exercise
+                  if (exercise.restTime > 0) {
+                    // ASYNC rest announcement - don't block timer
+                    if (voiceEnabled) {
+                      setIsWaitingForVoice(true);
+                      Promise.resolve().then(() => {
+                        setTimeout(() => {
+                          workoutSpeech.speak("מנוחה", {
+                            onEnd: () => {
+                              setIsWaitingForVoice(false);
+                              setIsResting(true);
+                              setRestTimer(exercise.restTime);
+                            }
+                          });
+                        }, 1500);
                       });
-                    }, 1500); // 1.5s delay after rep completion
+                    } else {
+                      setIsResting(true);
+                      setRestTimer(exercise.restTime);
+                    }
                   } else {
-                    setIsResting(true);
-                    setRestTimer(exercise.restTime);
+                    // No rest time, move to next exercise immediately
+                    setTimeout(() => {
+                      handleExerciseComplete();
+                    }, 100);
                   }
                 } else {
-                  // Exercise complete
+                  // Move to next set - start rest period first
+                  setCurrentSet(prevSet => prevSet + 1);
+                  setCurrentRep(0); // Reset to 0 for next set
                   setIsRunning(false);
                   setIsPaused(false);
-                  handleExerciseComplete();
+                  
+                  // Clear announced reps for next set
+                  setAnnouncedReps(new Set());
+                  
+                  // Start rest period if there's rest time
+                  if (exercise.restTime > 0) {
+                    // ASYNC rest announcement - don't block timer
+                    if (voiceEnabled) {
+                      setIsWaitingForVoice(true);
+                      Promise.resolve().then(() => {
+                        setTimeout(() => {
+                          workoutSpeech.speak("Set complete! Rest", {
+                            onEnd: () => {
+                              setIsWaitingForVoice(false);
+                              setIsResting(true);
+                              setRestTimer(exercise.restTime);
+                            }
+                          });
+                        }, 1500);
+                      });
+                    } else {
+                      setIsResting(true);
+                      setRestTimer(exercise.restTime);
+                    }
+                  } else {
+                    // No rest time, start next set immediately
+                    setIsPreparingForSet(true);
+                    setPreparationTimer(SET_PREPARATION_DELAY);
+                  }
                 }
               }
               return nextRep;
             });
-            return 0; // Reset rep timer
+            return 0; // Reset rep timer immediately when rep completes
           }
           
           return newRepTimer;
@@ -113,7 +178,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [isRunning, isPaused, isResting, isWaitingForVoice, isPreparingForSet, currentRep, currentSet, exercise.reps, exercise.sets, repDuration, voiceEnabled]);
+  }, [isRunning, isPaused, isResting, isWaitingForVoice, isPreparingForSet, currentRep, currentSet, exercise.reps, exercise.sets, repDuration, voiceEnabled, announcedReps]);
 
   // Rest timer
   useEffect(() => {
@@ -132,9 +197,17 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
             setIsResting(false);
             setRepTimer(0);
             
-            // Start preparation phase before next set
-            setIsPreparingForSet(true);
-            setPreparationTimer(SET_PREPARATION_DELAY);
+            // Check if we completed the entire exercise (all sets done)
+            if (currentSet >= exercise.sets && currentRep >= exercise.reps) {
+              // Exercise fully complete - move to next exercise
+              setTimeout(() => {
+                handleExerciseComplete();
+              }, 100);
+            } else {
+              // More sets to go - start preparation phase before next set
+              setIsPreparingForSet(true);
+              setPreparationTimer(SET_PREPARATION_DELAY);
+            }
             return 0;
           }
           return nextValue;
@@ -142,7 +215,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isResting, restTimer, voiceEnabled, currentSet, exercise.sets]);
+  }, [isResting, restTimer, voiceEnabled, currentSet, exercise.sets, currentRep, exercise.reps]);
 
   // Preparation timer - countdown before starting new set
   useEffect(() => {
@@ -201,12 +274,19 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
 
   const handleStart = () => {
     if (!isRunning) {
+      // Clear announced reps when starting
+      setAnnouncedReps(new Set());
+      // Reset rep timer to ensure clean start
+      setRepTimer(0);
+      
       if (voiceEnabled) {
         setIsWaitingForVoice(true);
-        workoutSpeech.announceWorkoutStart(() => {
-          setIsWaitingForVoice(false);
-          setIsRunning(true);
-          setIsPaused(false);
+        Promise.resolve().then(() => {
+          workoutSpeech.announceWorkoutStart(() => {
+            setIsWaitingForVoice(false);
+            setIsRunning(true);
+            setIsPaused(false);
+          });
         });
       } else {
         setIsRunning(true);
@@ -241,6 +321,9 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
     // Reset counters for next exercise
     setCurrentSet(1);
     setCurrentRep(0);
+    // Clear announced reps when skipping
+    setAnnouncedReps(new Set());
+    
     if (voiceEnabled) {
       workoutSpeech.stop();
     }
