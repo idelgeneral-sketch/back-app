@@ -159,7 +159,7 @@ class WorkoutSpeech {
   announceExercise(exerciseName) {
     const hebrew = this.getHebrewText();
     const hebrewExercise = hebrew.exercises[exerciseName] || exerciseName;
-    this.speak(`תרגיל: ${hebrewExercise}. ${hebrew.phrases.getReady}`);
+    this.speak(`תרגיל: ${hebrewExercise}`);
   }
 
   announceWorkoutStart(onComplete) {
