@@ -25,7 +25,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
 
   // Calculate derived values first
   const progressPercentage = ((exerciseIndex + (currentSet - 1) / exercise.sets) / totalExercises) * 100;
-  const repProgress = (repTimer / repDuration) * 100;
+  //const repProgress = (repTimer / repDuration) * 100;
   const isExerciseComplete = currentSet === exercise.sets && currentRep === exercise.reps;
 
   // Helper function definition
@@ -273,13 +273,6 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
         <div className="counter counter-reps">
           <div className="counter-label">Reps</div>
           <div className="counter-value">{currentRep}/{exercise.reps}</div>
-          {/* Rep progress indicator */}
-          <div className="rep-progress-bar">
-            <div 
-              className="rep-progress-fill" 
-              style={{ width: `${repProgress}%` }}
-            ></div>
-          </div>
         </div>
         <div className="counter counter-sets">
           <div className="counter-label">Set</div>
