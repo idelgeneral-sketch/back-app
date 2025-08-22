@@ -148,7 +148,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
                       setIsWaitingForVoice(true);
                       Promise.resolve().then(() => {
                         setTimeout(() => {
-                          workoutSpeech.speak("Set complete! Rest", {
+                          workoutSpeech.speak("מנוחה", {
                             onEnd: () => {
                               setIsWaitingForVoice(false);
                               setIsResting(true);
@@ -231,7 +231,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
             setIsRunning(true);
             setIsPaused(false);
             if (voiceEnabled) {
-              workoutSpeech.speak("Go!");
+              workoutSpeech.speak("קדימה");
             }
             return 0;
           }
@@ -261,7 +261,7 @@ const ExerciseScreen = ({ exercise, exerciseIndex, totalExercises, onNextExercis
       if (exerciseIndex === totalExercises - 1) {
         workoutSpeech.announceWorkoutComplete();
       } else {
-        workoutSpeech.speak('Exercise complete! Moving to next exercise.');
+        workoutSpeech.speak('תרגיל הושלם ממשיכים');
       }
     }
   }, [isExerciseComplete, exerciseIndex, totalExercises, voiceEnabled]);
